@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UCC Haunted Mystery</title>
+<style>
+  body {
+    font-family: "Georgia", serif;
+    background-color: #0a0a0a;
+    color: #e6e6e6;
+    margin: 40px;
+    line-height: 1.6;
+    overflow-x: hidden;
+    position: relative;
+  }
+  h1, h2 { color: #d4af37; }
+  .card {
+    background-color: #1b1b1b;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 0 15px rgba(212,175,55,0.2);
+  }
+  code, .math {
+    background-color: #222;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: monospace;
+    color: #9cdcfe;
+  }
+  input[type="text"] {
+    padding: 10px;
+    font-size: 1.2em;
+    width: 150px;
+    border: 2px solid #d4af37;
+    border-radius: 6px;
+    background-color: #111;
+    color: #fff;
+    text-align: center;
+  }
+  button {
+    padding: 10px 15px;
+    font-size: 1em;
+    border: none;
+    background-color: #d4af37;
+    color: #000;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+  #result {
+    font-weight: bold;
+    margin-top: 20px;
+  }
+  .flicker {
+    animation: flicker 1.5s infinite;
+  }
+  @keyframes flicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {opacity: 1;}
+    20%, 22%, 24%, 55% {opacity: 0.3;}
+  }
+  /* Jump scare overlay */
+  #jumpscare {
+    position: fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    display:none;
+    z-index:9999;
+  }
+  #jumpscare div {
+    width:100%;
+    height:100%;
+    background-color:#ff0000;
+    color:#ffffff;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    font-size:10vw;
+    font-weight:bold;
+    text-transform:uppercase;
+  }
+  /* MathJax style */
+  .mathjax {
+    font-size:1.1em;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="flicker">🕯️ UCC Haunted Mystery</h1>
+
+<!-- Puzzle 1 -->
+<div id="puzzle1" class="card">
+  <h2>🧩 The Professor’s Cipher</h2>
+  <p><em>Scene:</em> You stand in Professor Callanan’s dimly lit office. A folder lies open, pages smudged with ink and blood.</p>
+  <blockquote>“Truth lies only in the intersections. The code is five digits long.”</blockquote>
+  <p class="mathjax">Sets:</p>
+  <p class="mathjax">A = {1,3,4,6,7,9}, B = {0,2,4,5,6,8}, C = {1,2,3,5,7,8}, D = {2,4,6,8,9}</p>
+  <ol>
+    <li>First digit belongs to every set that contains an even number.</li>
+    <li>Second digit is in exactly three sets.</li>
+    <li>Third digit lies in (A ∪ C) ∩ B.</li>
+    <li>Fourth digit appears in one, but not both, of the sets A and C.</li>
+    <li>Fifth digit equals the smallest element of (B ∩ D) − A.</li>
+  </ol>
+  <blockquote>“The sum of the digits is a perfect square, and no even digit appears twice.”</blockquote>
+  <input type="text" id="codeInput1" maxlength="5" placeholder="*****">
+  <button onclick="checkAnswer(1)">Check Answer</button>
+  <div id="result1"></div>
+</div>
+
+<!-- Puzzle 2 -->
+<div id="puzzle2" class="card" style="display:none">
+  <h2>🧪 Lab Notebook Lock</h2>
+  <p><em>Scene:</em> The chemistry lab is dimly lit. A glowing notebook rests on a workbench surrounded by scattered papers.</p>
+  <p class="mathjax">Sets:</p>
+  <p class="mathjax">E = {1,3,5,7,9}, F = {0,2,4,6,8}, G = {1,2,4,5,7}, H = {2,3,5,6,8}</p>
+  <ol>
+    <li>First digit: in all sets containing 5.</li>
+    <li>Second digit: appears in exactly two of the four sets.</li>
+    <li>Third digit: in (E ∪ H) − (F ∩ G).</li>
+    <li>Fourth digit: in F but not in H.</li>
+    <li>Fifth digit: smallest number in G ∩ H.</li>
+  </ol>
+  <blockquote>“The sum is even, no digit is repeated. The second digit is prime.”</blockquote>
+  <input type="text" id="codeInput2" maxlength="5" placeholder="*****">
+  <button onclick="checkAnswer(2)">Check Answer</button>
+  <div id="result2"></div>
+</div>
+
+<!-- Puzzle 3 -->
+<div id="puzzle3" class="card" style="display:none">
+  <h2>📜 Restricted Archive Terminal</h2>
+  <p><em>Scene:</em> You are in the dusty restricted archive. A terminal flickers under dim light.</p>
+  <p class="mathjax">Sets:</p>
+  <p class="mathjax">I = {0,1,2,3,4}, J = {1,3,5,7,9}, K = {0,2,4,6,8}, L = {2,3,5,6,8}</p>
+  <ol>
+    <li>First digit: in sets containing an odd number.</li>
+    <li>Second digit: appears in exactly three sets.</li>
+    <li>Third digit: in (J ∪ K) ∩ L.</li>
+    <li>Fourth digit: in both I and J but not K.</li>
+    <li>Fifth digit: smallest number in K ∪ L.</li>
+  </ol>
+  <blockquote>“The sum of digits is prime. All digits distinct. Second digit smaller than fourth.”</blockquote>
+  <input type="text" id="codeInput3" maxlength="5" placeholder="*****">
+  <button onclick="checkAnswer(3)">Check Answer</button>
+  <div id="result3"></div>
+</div>
+
+<!-- Puzzle 4 -->
+<div id="puzzle4" class="card" style="display:none">
+  <h2>🏛️ Dean’s Office Lockbox</h2>
+  <p><em>Scene:</em> The Dean’s office is silent. A small lockbox sits on the polished desk.</p>
+  <p class="mathjax">Sets:</p>
+  <p class="mathjax">M = {1,2,3,6,7}, N = {0,2,4,6,8}, O = {1,3,5,7,9}, P = {0,1,2,3,4,5}</p>
+  <ol>
+    <li>First digit: in all sets containing 2.</li>
+    <li>Second digit: in exactly two sets.</li>
+    <li>Third digit: in (M ∪ N) − (N ∩ P).</li>
+    <li>Fourth digit: appears in one but not both of O and P.</li>
+    <li>Fifth digit: largest number in N ∩ P.</li>
+  </ol>
+  <blockquote>“No digit is repeated. Sum divisible by 3. Second digit is even. Fourth digit is largest remaining.”</blockquote>
+  <input type="text" id="codeInput4" maxlength="5" placeholder="*****">
+  <button onclick="checkAnswer(4)">Check Answer</button>
+  <div id="result4"></div>
+</div>
+
+<!-- Final Clue -->
+<div id="finalClue" class="card" style="display:none">
+  <h2>🔑 The Final Clue</h2>
+  <p><em>Scene:</em> As the lockbox clicks open, a folded note slips out, illuminated by the dim office light.</p>
+  <blockquote>
+    “Only when all paths align, and the chaos is tamed, will the secret of the UCC mystery be revealed…”
+  </blockquote>
+</div>
+
+<!-- Jump scare overlay -->
+<div id="jumpscare">
+  <div>EMPLOYMENT</div>
+</div>
+
+<script>
+function checkAnswer(puzzle){
+    const answers = ["62098","51602","32840","20694"];
+    const input = document.getElementById("codeInput"+puzzle).value.trim();
+    const resultDiv = document.getElementById("result"+puzzle);
+
+    if(input === answers[puzzle-1]){
+        resultDiv.innerHTML = "✅ Correct — unlocking next clue...";
+        resultDiv.style.color="#00ff88";
+
+        if(puzzle < 4){
+            document.getElementById("puzzle"+(puzzle+1)).style.display="block";
+        } else {
+            // Puzzle 4 solved, show the final clue
+            resultDiv.innerHTML="🎉 All puzzles solved!";
+            document.getElementById("finalClue").style.display="block";
+        }
+
+    } else {
+        resultDiv.innerHTML = "❌ Incorrect — try again.";
+        resultDiv.style.color="#ff5555";
+        triggerJumpScare();
+    }
+}
+
+function triggerJumpScare(){
+    const scare = document.getElementById("jumpscare");
+    scare.style.display="block";
+    setTimeout(()=>{ scare.style.display="none"; }, 500); // visible for 0.5 seconds
+}
+</script>

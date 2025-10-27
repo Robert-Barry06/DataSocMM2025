@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dr. Ravenwood — Blood Cipher Journal</title>
+
+<script id="MathJax-script" async
+  src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg: #0b0000;
+  --page1: #1a0000;
+  --page2: #200000;
+  --accent: #ff2d2d;
+  --muted: #e0d0d0;
+  --divider: rgba(255, 0, 0, 0.3);
+  --glass: rgba(255, 255, 255, 0.05);
+}
+
+/* Basic Reset */
+* { box-sizing: border-box; }
+html, body { 
+  height: 100%; margin:0; font-family:'Special Elite', monospace;
+  background: var(--bg); color: var(--muted); overflow-x: hidden;
+}
+
+/* Floating Parallax Skulls */
+body::before, body::after {
+  content: "☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠ ☠";
+  position: fixed; width: 200%; height: 200%;
+  font-size: 3rem; color: rgba(255,0,0,0.05);
+  white-space: pre-wrap; text-align: center; line-height: 2.5rem;
+  z-index: 1; pointer-events: none;
+}
+body::before { animation: floatSkulls1 60s linear infinite; }
+body::after { animation: floatSkulls2 90s linear infinite; }
+
+@keyframes floatSkulls1 { 0% { transform: translate(0,0) rotate(0deg); } 100% { transform: translate(-50%,-200%) rotate(360deg); } }
+@keyframes floatSkulls2 { 0% { transform: translate(50%,0) rotate(0deg); } 100% { transform: translate(-50%,-250%) rotate(-360deg); } }
+
+/* Blood Drips */
+.blood-drip { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:2; overflow:hidden; }
+.drip { position:absolute; width:4px; background: rgba(255,0,0,0.4); border-radius:2px; top:-25px; animation: dripFall linear infinite; }
+@keyframes dripFall { 0% { transform: translateY(0) scaleX(1); opacity:0.6; } 70% { opacity:0.8; } 100% { transform: translateY(110vh) scaleX(0.5); opacity:0; } }
+
+/* ENTRY SCREEN */
+.entry-center {
+  position: fixed; inset: 0;
+  background: radial-gradient(circle at center, #1a0000 0%, #000 90%);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+}
+.entry-card {
+  background: rgba(0,0,0,0.7); border:2px solid var(--accent); border-radius:12px;
+  padding:40px; width:420px; text-align:center; box-shadow:0 0 40px rgba(255,0,0,0.3);
+}
+.entry-card h2 { color: var(--accent); margin-bottom:12px; text-shadow:0 0 10px var(--accent); }
+.entry-card p { color: var(--muted); }
+input[type="password"] { padding:12px; width:80%; background:#200; border:1px solid var(--divider); color:#fff; border-radius:6px; margin-top:10px; font-family:'Special Elite'; }
+button.primary { padding:10px 14px; background:var(--accent); color:#000; border:none; border-radius:6px; cursor:pointer; font-weight:bold; margin-left:5px; }
+.hint { color:#ff8080; margin-top:12px; font-weight:bold; }
+
+/* OVERLAY JOURNAL */
+.overlay {
+  position: fixed; inset:0; 
+  background: rgba(0,0,0,0.85);
+  padding:40px; display:none; z-index:5000; overflow-y:auto;
+}
+.journal-wrap { max-width:1000px; margin:0 auto; perspective:1700px; }
+.journal { position: relative; transform-style: preserve-3d; }
+
+/* PAGE STYLING */
+.page {
+  width:100%; background: linear-gradient(145deg,var(--page1),var(--page2));
+  border-radius:12px; padding:30px; box-shadow:0 0 50px rgba(255,0,0,0.2);
+  border:1px solid var(--divider); position:absolute; top:0; left:0;
+  backface-visibility:hidden;
+  display:none; /* hide all pages initially */
+}
+.page.active { display:block; } /* show only active page */
+
+h3 { color: var(--accent); text-shadow:0 0 10px var(--accent); }
+p.lead { color: var(--muted); }
+
+.matrix-row { display:flex; gap:20px; align-items:flex-start; margin-top:16px; flex-wrap:wrap; }
+table.matrix { border-collapse: collapse; background: var(--glass); border-radius:8px; box-shadow: inset 0 0 0 1px var(--divider); }
+.matrix td { padding:8px 10px; min-width:36px; text-align:center; color:var(--muted); }
+.matrix td.divider { border-right:2px solid var(--accent); padding-right:16px; }
+.matrix td.bcol { color:#fff; font-weight:bold; padding-left:16px; }
+
+.x-vector { background: var(--glass); padding:8px; border-radius:8px; display:flex; flex-direction:column; width:150px; box-shadow: inset 0 0 0 1px var(--divider); }
+.x-entry { color:#fff; text-align:center; padding:10px; border-top:1px solid var(--divider); }
+.x-entry:first-child { border-top:none; }
+.x-label { text-align:center; color:var(--accent); margin-bottom:8px; }
+
+.pw-row { margin-top:16px; display:flex; gap:10px; flex-wrap:wrap; }
+.feedback { color:#ff6666; font-weight:bold; margin-top:8px; }
+
+.clue {
+  margin-top:20px; background: var(--glass); padding:12px;
+  border:1px solid var(--divider); border-radius:8px; color:#00ff9c;
+  font-weight:bold; box-shadow:0 0 15px rgba(0,255,100,0.3);
+}
+
+@media (max-width: 720px) {
+  .matrix-row { flex-direction: column; align-items:center; }
+}
+</style>
+</head>
+<body>
+
+<!-- ENTRY SCREEN -->
+<div class="entry-center" id="entryScreen">
+  <div class="entry-card">
+    <h3>☠ Dr. Ravenwood’s Journal ☠</h3>
+    <p>Enter the password to access the blood cipher journal.</p>
+    <input id="entry-pass" type="password" placeholder="Enter password">
+    <button class="primary" onclick="checkEntryPassword()">Open</button>
+    <p class="hint" id="entry-hint"></p>
+  </div>
+</div>
+
+<!-- OVERLAY JOURNAL -->
+<div class="overlay" id="overlay">
+  <div class="journal-wrap">
+    <div class="journal">
+
+      <!-- PAGE 1 -->
+      <div id="page-1" class="page active">
+        <h3>Page 1 — Cipher Matrix [A₁ | b₁]</h3>
+        <p class="lead">Use the <strong>first decimal digit (signed)</strong> of each x<sub>i</sub> to form the access code.</p>
+        <div class="matrix-row">
+          <table class="matrix">
+            <tr><td>1</td><td>0</td><td>2</td><td>1</td><td class="divider">0</td><td class="bcol">8</td></tr>
+            <tr><td>0</td><td>1</td><td>-1</td><td>2</td><td class="divider">1</td><td class="bcol">-1</td></tr>
+            <tr><td>3</td><td>-1</td><td>1</td><td>0</td><td class="divider">-1</td><td class="bcol">7</td></tr>
+            <tr><td>0</td><td>3</td><td>1</td><td>-1</td><td class="divider">4</td><td class="bcol">10</td></tr>
+            <tr><td>1</td><td>7</td><td>1</td><td>5</td><td class="divider">2</td><td class="bcol">14</td></tr>
+          </table>
+          <div class="x-vector">
+            <div class="x-label">Solution Vector (x)</div>
+            <div class="x-entry">x₁</div><div class="x-entry">x₂</div><div class="x-entry">x₃</div>
+            <div class="x-entry">x₄</div><div class="x-entry">x₅</div>
+          </div>
+        </div>
+        <div class="pw-row">
+          <input id="user-pass-1" type="password" placeholder="Enter code (signed digits)">
+          <button class="primary" onclick="checkPassword(1)">Unlock Page 2</button>
+        </div>
+        <div class="feedback" id="feedback-1"></div>
+      </div>
+
+      <!-- PAGE 2 -->
+      <div id="page-2" class="page">
+        <h3>Page 2 — Cipher Matrix [A₂ | b₂]</h3>
+        <p class="lead">Use the <strong>sum of integer parts</strong> of x<sub>i</sub>.</p>
+        <div class="matrix-row">
+          <table class="matrix">
+            <tr><td>2</td><td>-1</td><td>1</td><td>3</td><td class="divider">0</td><td class="bcol">7</td></tr>
+            <tr><td>1</td><td>0</td><td>-2</td><td>1</td><td class="divider">1</td><td class="bcol">-3</td></tr>
+            <tr><td>3</td><td>2</td><td>0</td><td>-1</td><td class="divider">4</td><td class="bcol">10</td></tr>
+            <tr><td>0</td><td>1</td><td>2</td><td>-1</td><td class="divider">1</td><td class="bcol">2</td></tr>
+            <tr><td>1</td><td>-3</td><td>1</td><td>4</td><td class="divider">2</td><td class="bcol">5</td></tr>
+          </table>
+          <div class="x-vector">
+            <div class="x-label">Solution Vector (x)</div>
+            <div class="x-entry">x₁</div><div class="x-entry">x₂</div><div class="x-entry">x₃</div>
+            <div class="x-entry">x₄</div><div class="x-entry">x₅</div>
+          </div>
+        </div>
+        <div class="pw-row">
+          <input id="user-pass-2" type="password" placeholder="Enter code (sum of integers)">
+          <button class="primary" onclick="checkPassword(2)">Unlock Page 3</button>
+        </div>
+        <div class="feedback" id="feedback-2"></div>
+      </div>
+
+      <!-- PAGE 3 -->
+      <div id="page-3" class="page">
+        <h3>Page 3 — Final Cipher Matrix [A₃ | b₃]</h3>
+        <p class="lead">Use the <strong>last decimal digit (signed)</strong> of x<sub>i</sub>.</p>
+        <div class="matrix-row">
+          <table class="matrix">
+            <tr><td>1</td><td>2</td><td>-1</td><td>1</td><td class="divider">0</td><td class="bcol">4</td></tr>
+            <tr><td>0</td><td>1</td><td>1</td><td>-1</td><td class="divider">2</td><td class="bcol">3</td></tr>
+            <tr><td>2</td><td>-1</td><td>1</td><td>0</td><td class="divider">1</td><td class="bcol">5</td></tr>
+            <tr><td>1</td><td>1</td><td>-2</td><td>1</td><td class="divider">3</td><td class="bcol">6</td></tr>
+            <tr><td>0</td><td>3</td><td>1</td><td>2</td><td class="divider">-1</td><td class="bcol">2</td></tr>
+          </table>
+          <div class="x-vector">
+            <div class="x-label">Solution Vector (x)</div>
+            <div class="x-entry">x₁</div><div class="x-entry">x₂</div><div class="x-entry">x₃</div>
+            <div class="x-entry">x₄</div><div class="x-entry">x₅</div>
+          </div>
+        </div>
+        <div class="pw-row">
+          <input id="user-pass-3" type="password" placeholder="Enter code (signed last digits)">
+          <button class="primary" onclick="checkPassword(3)">Go to Page 4</button>
+        </div>
+        <div class="feedback" id="feedback-3"></div>
+      </div>
+
+      <!-- PAGE 4 -->
+      <div id="page-4" class="page">
+        <h3>Page 4 — Hidden Findings</h3>
+        <p class="lead">This page contains the final hidden evidence discovered in Dr. Ravenwood’s research.</p>
+        <div class="matrix-row">
+          <table class="matrix">
+             <tr><td>Evidence</td><td>Confirmed</td></tr>
+             <tr><td>Experiment Logs</td><td>✔</td></tr>
+             <tr><td>Email Chain</td><td>✔</td></tr>
+             <tr><td>Hidden Notes</td><td>✔</td></tr>
+          </table>
+       </div>
+       <div class="clue" id="final-clue-2">
+         🎯 <strong>Ultimate Clue:</strong> Dr. Chen’s methodology inconsistencies verified.
+       </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="blood-drip" id="blood-drip-container"></div>
+
+<script>
+// Blood drips creation
+const dripContainer = document.getElementById('blood-drip-container');
+for(let i=0;i<40;i++){
+  const drip = document.createElement('div');
+  drip.className='drip';
+  drip.style.left = Math.random()*100+'vw';
+  drip.style.animationDuration = (5+Math.random()*10)+'s';
+  drip.style.animationDelay = Math.random()*10+'s';
+  drip.style.height = (10+Math.random()*25)+'px';
+  dripContainer.appendChild(drip);
+}
+
+// Passwords
+const ENTRY_PASSWORD = "12345";
+const PASSWORDS = ["1-1203","3","502-57"];
+const entryScreen = document.getElementById('entryScreen');
+const overlay = document.getElementById('overlay');
+
+// Show overlay
+function showOverlayFullScreen(){
+  entryScreen.style.display='none';
+  overlay.style.display='block';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// Check entry
+function checkEntryPassword(){
+  const v = document.getElementById('entry-pass').value || '';
+  const hint = document.getElementById('entry-hint');
+  if(v===ENTRY_PASSWORD){ showOverlayFullScreen(); } 
+  else { hint.textContent='❌ Incorrect password. Try again.'; }
+}
+
+// Show page
+function showPage(pageId){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const page = document.getElementById(pageId);
+  if(page) page.classList.add('active');
+}
+
+// Blood pulse on correct password
+function pulseDrips(){
+  const drips=document.querySelectorAll('.drip');
+  drips.forEach(d=>{ d.style.animationDuration=(2+Math.random()*3)+'s'; d.style.opacity=1; });
+  setTimeout(()=>{ drips.forEach(d=>{ d.style.animationDuration=(5+Math.random()*10)+'s'; }); },1000);
+}
+
+// Check page passwords
+function checkPassword(step){
+  const input = document.getElementById(`user-pass-${step}`);
+  const feedback = document.getElementById(`feedback-${step}`);
+  const val = input? input.value||'' : '';
+  if(val===PASSWORDS[step-1]){
+    pulseDrips();
+    if(step===1) showPage('page-2');
+    else if(step===2) showPage('page-3');
+    else if(step===3) showPage('page-4'); // automatically go to page 4
+    feedback.textContent='';
+  } else { feedback.textContent='❌ Incorrect password. Try again.'; }
+}
+
+// Skull tilt effect
+document.addEventListener('mousemove', e=>{
+  const w=window.innerWidth; const h=window.innerHeight;
+  const x=(e.clientX/w-0.5)*15; const y=(e.clientY/h-0.5)*15;
+  document.body.style.transform=`rotateX(${y}deg) rotateY(${x}deg)`;
+});
+
+// ESC to close overlay
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    if(overlay.style.display==='block'){
+      overlay.style.display='none';
+      entryScreen.style.display='flex';
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById('page-1').classList.add('active');
+    }
+  }
+});
+</script>
+
+</body>
+</html>
