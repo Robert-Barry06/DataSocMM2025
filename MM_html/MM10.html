@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Crimes on Campus</title>
+<style>
+body { font-family: Arial, sans-serif; margin: 20px; background: #f8f8f8; }
+h1, h2, h3 { color: #333; text-align: center; }
+table { border-collapse: collapse; margin: 20px auto; width: 95%; }
+th, td { border: 1px solid #333; padding: 6px; text-align: center; position: relative; }
+th { background-color: #ccc; }
+td { background-color: #fff; }
+input[type="checkbox"] { transform: scale(1.2); cursor: pointer; }
+.clue { color: #08457e; font-weight: bold; text-align: left; margin: 10px auto; font-size: 1.05em; background:#eef; padding:8px; border-radius:6px; width: 95%; }
+.form-section { text-align: center; margin-top: 10px; }
+button { padding: 6px 10px; margin: 6px; cursor: pointer; }
+.disabled { background-color: #eee; cursor: not-allowed; }
+.statement { text-align: left; margin: 0 auto 10px auto; width: 95%; background:#eef; padding:8px; border-radius:6px; cursor:pointer;}
+.description-box { text-align: left; margin: 6px auto; width: 95%; background:#ffd; padding:8px; border-radius:6px; display:none; }
+.tooltip { display: none; position: absolute; background: #ffd; border: 1px solid #333; padding: 6px; border-radius: 5px; z-index: 100; width: 220px; font-size: 0.9em; text-align:left; }
+th:hover .tooltip, td:hover .tooltip { display: block; }
+.instructions { text-align:center; font-style:italic; margin-bottom:10px;}
+.label-cell { background-color: #555; color: white; font-weight: bold; border-radius: 5px; box-shadow: 1px 1px 3px rgba(0,0,0,0.2);}
+select { padding:4px; margin:4px; }
+</style>
+</head>
+<body>
+
+<h1>Crimes on Campus</h1>
+
+<p class="instructions">
+Click on suspect names to reveal their bios. Hover over weapons, stash-locations, and motives in the grid to see their descriptions. 
+Use the grids to deduce who handled the weapon, what the object was, where it was stashed *after* the incident, and why. <strong>CULPRIT ALWAYS LIES</strong>
+</p>
+
+<p class="instructions">
+<strong>How to use the grid:</strong>  
+- <strong>Suspect:</strong> Who could have handled and moved the object, based on access, habits, and statements.  
+- <strong>Weapon:</strong> The object that was used or moved; clues may show how it behaves/appears after use.  
+- <strong>Location:</strong> Where the weapon/object was stashed **after** the incident—look for evidence of movement or later discovery.  
+- <strong>Motive:</strong> Why someone might move or conceal the object; match motive clues with suspect behavior and stash choices.
+</p>
+
+<div id="mysteries-container"></div>
+
+<script>
+// ----------------- DATA (locations are stash-after-crime) -----------------
+const mysteries = {
+  m1: {
+    title: "Mystery 1: WGB Cafe Vending Machine",
+    suspects: ["Janitor","Lunch Lady","Help Desk Worker","Security Guard"],
+    weapons: ["Fire Extinguisher","Laptop","Blackboard Eraser","3D Printer"],
+    // Locations = where weapon was STASHED after the crime
+    locations: ["Boole Library Cabinet","WGB Cafe Backroom","Brookefield Shed","Kane Building Locker"],
+    motives: ["Sweet Revenge","Snack Sabotage","Chaos for Fun","Steal the Spotlight"],
+    culprit: "Help Desk Worker",
+    statements: {
+      "Janitor": { bio: `Longtime janitor; moves maintenance tools between sheds and backrooms during morning rounds; usually handles utility items rather than tech.\nHeight: 5'8" • Right-handed • Brown Eyes • Grey Hair`, morning: "I was on morning rounds near the back entrance.", evening: "I didn't touch anything electronic." },
+      "Lunch Lady": { bio: `Kitchen-focused; manages deliveries and keeps track of inventory in the cafe backroom; rarely beyond the kitchen during service hours.\nHeight: 5'5" • Left-handed • Hazel Eyes • Blonde Hair`, morning: "We had an early delivery and I checked stock.", evening: "I stayed in the kitchen most of the morning." },
+      "Help Desk Worker": { bio: `Handles campus laptops and loaner devices; familiar with library cabinets and equipment check-outs; roams between buildings during shifts.\nHeight: 5'9" • Right-handed • Dark Brown Eyes • Black Hair`, morning: "I was troubleshooting in the library.", evening: "I never touched the vending machine." },
+      "Security Guard": { bio: `Monitors entrances and storage areas; occasionally records when items are moved to lockers or closets; checks keys and logs.\nHeight: 6'0" • Left-handed • Green Eyes • Brown Hair`, morning: "Made rounds through the cafe and checked storage doors.", evening: "Noted some items were moved during rounds." }
+    },
+    weaponDesc: {
+      "Fire Extinguisher": "Red canister usually left in utility closets; if moved, tends to be heavy and often seen near service corridors.",
+      "Laptop": "Portable device often signed in/out at cabinets; when hidden it may be tucked into cabinets or behind plaques and later returned to equipment closets.",
+      "Blackboard Eraser": "Classroom object; small and dusty; seldom subject to formal check-outs.",
+      "3D Printer": "Large, fixed device; smaller printed parts are portable and occasionally carried between maker spaces and staff rooms."
+    },
+    locationDesc: {
+      "Boole Library Cabinet": "Library equipment cabinets where loaner laptops are kept; checkout logs and timestamps exist here — good place for a temporary stash.",
+      "WGB Cafe Backroom": "Cafe staff storage with boxes and small lockers; convenient for quick concealment during service.",
+      "Brookefield Shed": "Outdoor maintenance shed; accessible but out of the main flow of daytime traffic.",
+      "Kane Building Locker": "Small staff lockers and cupboards used for office supplies; requires a key or badge for access."
+    },
+    motiveDesc: {
+      "Sweet Revenge": "Actions targeting a person; evidence may tie to interpersonal timing or specific contacts.",
+      "Snack Sabotage": "Interfering with food-service equipment; clues often reference cafe timings or things found near food areas.",
+      "Chaos for Fun": "Disorderly acts without clear target; evidence may appear random but show deliberate movement.",
+      "Steal the Spotlight": "Designed to be noticed; stash location may be conspicuous or intended to draw attention later."
+    },
+    clues: [
+      // Clues connect incident -> movement -> stash
+      "A laptop was observed tucked partly under a plaque near the vending machine shortly after the disturbance.",
+      "Library camera footage shows a person leaving the cafe area and heading toward the library at 10:18am.",
+      "Boole Library checkout logs show a loaner laptop returned to a cabinet at 10:35am (timestamped by staff).",
+      "Fingerprints on the vending machine match a staff member recorded as handling campus laptops in staff logs.",
+      "Cafe backroom staff report someone opened the backdoor briefly around the same time."
+    ],
+    answer: { suspect: "Help Desk Worker", weapon: "Laptop", location: "Boole Library Cabinet", motive: "Snack Sabotage" },
+    solutionClue: "Clue unlocked: Toxicology report comes back..."
+  },
+
+  m2: {
+    title: "Mystery 2: G32 Computer Lab – Stolen Mouse",
+    suspects: ["Lab Assistant","Receptionist","Help Desk Worker","Security Guard"],
+    weapons: ["Beaker","Hose","Laptop","Clipboard"],
+    // Locations = where the weapon (beaker) was STASHED after the incident
+    locations: ["Lecture Hall AV Closet","G32 Lab Corner Shelf","Cafeteria Utility Cabinet","Gym Storage Room"],
+    motives: ["Mischief","Personal Grudge","Test Student Patience","Attention-Seeking"],
+    culprit: "Lab Assistant",
+    statements: {
+      "Lab Assistant": { bio: `Manages lab glassware and records sign-outs; familiar with moving beakers between storage and benches for experiments.\nHeight: 5'6" • Right-handed • Blue Eyes • Black Hair`, morning: "I checked inventory and noticed a beaker missing later.", evening: "Entered G32 briefly during the morning." },
+      "Receptionist": { bio: `Logs deliveries and sees who carries items from storage to other areas; notices unusual items near exits.\nHeight: 5'4" • Left-handed • Brown Eyes • Red Hair`, morning: "I saw someone carry a container toward the lecture hall.", evening: "I logged a delivery with equipment earlier." },
+      "Help Desk Worker": { bio: `Helps with AV setups and moves laptops and cables between AV closets and rooms; less familiar with lab glassware.\nHeight: 5'9" • Right-handed • Dark Brown Eyes • Black Hair`, morning: "Set up AV for a class in the lecture hall.", evening: "Did not handle lab glassware." },
+      "Security Guard": { bio: `Notes doors and storage access; often records if storage was opened outside scheduled times.\nHeight: 6'0" • Left-handed • Green Eyes • Brown Hair`, morning: "Did rounds near lab storage.", evening: "Noted lab storage door ajar at one point." }
+    },
+    weaponDesc: {
+      "Beaker": "Glass vessel tracked in lab logs; fragile and sometimes wiped after use; may be tucked away in AV closets or shelves if someone wants to conceal it temporarily.",
+      "Hose": "Maintenance item, stored in utility areas; uncommon in lab spaces.",
+      "Laptop": "AV laptops are logged in lecture hall closets; carrying one into lab benches is unusual but possible for demos.",
+      "Clipboard": "Common reception item; usually remains near the desk and rarely taken into labs."
+    },
+    locationDesc: {
+      "Lecture Hall AV Closet": "Holds AV laptops and demo gear; may be used briefly to conceal items that aren't expected there.",
+      "G32 Lab Corner Shelf": "Shelving near benches with lab glassware storage; access usually tracked by lab staff.",
+      "Cafeteria Utility Cabinet": "Small storage for cleaning items; unlikely location for lab glassware but accessible during busy periods.",
+      "Gym Storage Room": "Contains sports gear; not typically related to lab equipment."
+    },
+    motiveDesc: {
+      "Mischief": "Practical jokes or pranks; evidence often shows temporary hiding or movement of items to confuse others.",
+      "Personal Grudge": "Targeted interference; clues may show targeted placement or timed actions.",
+      "Test Student Patience": "Small actions intended to frustrate; placement often causes minor delays.",
+      "Attention-Seeking": "Placement intended to be found by many; may involve visible locations."
+    },
+    clues: [
+      // movement from scene to stash after the incident
+      "Lab inventory shows a beaker missing during the Lab Assistant's morning shift.",
+      "Wet footprints lead away from the experiment bench toward the corridor and on toward the lecture hall area.",
+      "A beaker matching the lab set was later sighted in the Lecture Hall AV Closet by an AV technician at 11:10am.",
+      "Lab logs show the Lab Assistant signed out equipment that morning and returned later than scheduled."
+    ],
+    answer: { suspect: "Lab Assistant", weapon: "Beaker", location: "Lecture Hall AV Closet", motive: "Mischief" },
+    solutionClue: "Clue unlocked: Poison is a rare compound used in the Biology department's pest control lab."
+  },
+
+  m3: {
+    title: "Mystery 3: Main Area Macintosh Display Case Smash",
+    suspects: ["Librarian","Maintenance Worker","Help Desk Worker","Security Guard"],
+    weapons: ["Stapler","Mop","3D Printed Part","Clipboard"],
+    // Locations = where the printed part/tool was STASHED after the incident
+    locations: ["Library Storage","Staff Room Cabinet","Maintenance Closet","Quad Shed"],
+    motives: ["Revenge","Chaos","Attention","Snack Sabotage"],
+    culprit: "Help Desk Worker",
+    statements: {
+      "Librarian": { bio: `Schedules maker-space sessions and notes who checks out small printed parts; keeps basic logs of transfers.\nHeight: 5'7" • Right-handed • Hazel Eyes • Blonde Hair`, morning: "I ran maker-space bookings today.", evening: "I didn't see anything large moved out." },
+      "Maintenance Worker": { bio: `Moves tools and props between storage and site; sometimes borrows small items for repairs.\nHeight: 6'0" • Left-handed • Brown Eyes • Black Hair`, morning: "Transported boxes from the closet.", evening: "Didn't work on the display case today." },
+      "Help Desk Worker": { bio: `Has experience with 3D printing small parts and occasionally transfers printed pieces to staff rooms for pickup; comfortable moving items between maker-space and staff areas.\nHeight: 5'9" • Right-handed • Dark Brown Eyes • Black Hair`, morning: "Troubleshot printers and queued small prints.", evening: "I never went near the display case." },
+      "Security Guard": { bio: `Keeps key logs and notes who uses supply cabinets; sometimes sees staff carrying small parcels or packages out of storage.\nHeight: 6'0" • Left-handed • Green Eyes • Brown Hair`, morning: "Checked keys at the staff room and supply closets.", evening: "Observed someone access a cabinet earlier." }
+    },
+    weaponDesc: {
+      "Stapler": "Common desk item; occasionally moved between offices and staff rooms.",
+      "Mop": "Wet cleaning tool; if used, will leave traces and is usually returned to maintenance closets.",
+      "3D Printed Part": "Small printed pieces are made in maker-spaces and often moved in pockets or small containers to staff rooms or storage.",
+      "Clipboard": "Kept near reception and desks; rarely used to interact with displays."
+    },
+    locationDesc: {
+      "Library Storage": "Shelves and small bins where maker-space output or small equipment may be temporarily placed.",
+      "Staff Room Cabinet": "Central spot where staff sometimes pick up printed parts or small items left for them.",
+      "Maintenance Closet": "Tool storage area; items used for repairs tend to be returned here.",
+      "Quad Shed": "Outdoor storage for seasonal equipment; not often used during display maintenance."
+    },
+    motiveDesc: {
+      "Revenge": "Personal motive; clues may show selective targeting rather than random damage.",
+      "Chaos": "Deliberate disruption; evidence often shows pre-preparation and movement of small tools or parts.",
+      "Attention": "Seek visibility; placement may be conspicuous and intended to be seen.",
+      "Snack Sabotage": "Doesn't directly connect to a smashed display; hints would point to food areas instead."
+    },
+    clues: [
+      // event happened, then object moved to stash
+      "A small 3D-printed fragment matching maker-space files was recovered beside the smashed display.",
+      "Maker-space logs show a small print job completed the evening before, and a staff-room check shows a small part checked in later that morning.",
+      "Dust and scuff marks indicate a swift exit path toward the library-side storage area.",
+      "Key logs show the Staff Room Cabinet was accessed by a staff member shortly after the incident."
+    ],
+    answer: { suspect: "Help Desk Worker", weapon: "3D Printed Part", location: "Staff Room Cabinet", motive: "Chaos" },
+    solutionClue: "Clue unlocked: Check who has access keys."
+  }
+};
+
+// ----------------- GENERATE HTML -----------------
+const container = document.getElementById("mysteries-container");
+for(const key in mysteries){
+  const m = mysteries[key];
+  const div = document.createElement("div");
+  div.id = key;
+
+  // Title
+  const title = document.createElement("h2");
+  title.textContent = m.title;
+  div.appendChild(title);
+
+  // Deduction clues (always visible)
+  const sectionClues = document.createElement("div");
+  sectionClues.className = "clue";
+  sectionClues.style.display = "block";
+  sectionClues.innerHTML = `<strong>Deduction Clues:</strong><ul>${m.clues.map(c=>`<li>${c}</li>`).join("")}</ul>`;
+  div.appendChild(sectionClues);
+
+  // Solution clue (hidden until correct)
+  const solutionClue = document.createElement("div");
+  solutionClue.id = `${key}-solution-clue`;
+  solutionClue.className = "clue";
+  solutionClue.style.display = "none";
+  solutionClue.innerHTML = `<strong>Solution Clue:</strong> ${m.solutionClue}`;
+  div.appendChild(solutionClue);
+
+  // Suspect Statements
+  const stHeader = document.createElement("h3");
+  stHeader.textContent = "Suspect Statements (Click to reveal bio)";
+  div.appendChild(stHeader);
+
+  for(const s of m.suspects){
+    const st = document.createElement("div");
+    st.className = "statement";
+    st.innerHTML = `<strong>${s}</strong><br>Morning: "${m.statements[s].morning}"<br>Evening: "${m.statements[s].evening}"<div class="description-box">${m.statements[s].bio.replace(/\n/g,"<br>")}</div>`;
+    st.addEventListener("click", ()=> {
+      const box = st.querySelector(".description-box");
+      box.style.display = box.style.display==="block" ? "none" : "block";
+    });
+    div.appendChild(st);
+  }
+
+  // Grid Table
+  const table = document.createElement("table");
+
+  // Column headers: Locations and Motives
+  let headerRow = `<tr><th></th>`;
+  headerRow += `<th colspan="${m.locations.length}" class="label-cell">Locations (where object was stashed AFTER incident)</th>`;
+  headerRow += `<th colspan="${m.motives.length}" class="label-cell">Motives</th></tr>`;
+  table.innerHTML = headerRow;
+
+  // Second header row with actual names
+  let secondHeaderRow = `<tr><td></td>`;
+  m.locations.forEach(l => secondHeaderRow += `<th>${l}<div class="tooltip">${m.locationDesc[l]}</div></th>`);
+  m.motives.forEach(mo => secondHeaderRow += `<th>${mo}<div class="tooltip">${m.motiveDesc[mo]}</div></th>`);
+  secondHeaderRow += `</tr>`;
+  table.innerHTML += secondHeaderRow;
+
+  // Suspects label row
+  let suspectLabelRow = `<tr><td class="label-cell">Suspects</td>`;
+  for(let i=0;i< m.locations.length + m.motives.length; i++) suspectLabelRow+=`<td></td>`;
+  suspectLabelRow+=`</tr>`;
+  table.innerHTML += suspectLabelRow;
+
+  // Suspect rows
+  m.suspects.forEach(s=>{
+    let row = `<tr class="section-title"><td>${s}</td>`;
+    for(let i=0;i< m.locations.length + m.motives.length; i++){
+      row+=`<td><input type="checkbox" class="${key}-cell" data-type="suspect" data-name="${s}"></td>`;
+    }
+    row+=`</tr>`;
+    table.innerHTML+=row;
+  });
+
+  // Weapons label row
+  let weaponLabelRow = `<tr><td class="label-cell">Weapons</td>`;
+  for(let i=0;i< m.locations.length + m.motives.length; i++) weaponLabelRow+=`<td></td>`;
+  weaponLabelRow+=`</tr>`;
+  table.innerHTML += weaponLabelRow;
+
+  // Weapon rows
+  m.weapons.forEach(w=>{
+    let row = `<tr class="subsection"><td>${w}<div class="tooltip">${m.weaponDesc[w]}</div></td>`;
+    for(let i=0;i< m.locations.length + m.motives.length; i++){
+      row+=`<td><input type="checkbox" class="${key}-cell" data-type="weapon" data-name="${w}"></td>`;
+    }
+    row+=`</tr>`;
+    table.innerHTML+=row;
+  });
+
+  div.appendChild(table);
+
+  // Submission form
+  const form = document.createElement("div");
+  form.className="form-section";
+  form.innerHTML=`
+    <select id="${key}-suspect"><option value="">Select Suspect</option>${m.suspects.map(s=>`<option>${s}</option>`).join("")}</select>
+    <select id="${key}-weapon"><option value="">Select Weapon</option>${m.weapons.map(w=>`<option>${w}</option>`).join("")}</select>
+    <select id="${key}-location"><option value="">Select Stash Location</option>${m.locations.map(l=>`<option>${l}</option>`).join("")}</select>
+    <select id="${key}-motive"><option value="">Select Motive</option>${m.motives.map(mo=>`<option>${mo}</option>`).join("")}</select>
+    <button onclick="submitMystery('${key}')">Submit Solution</button>
+  `;
+  div.appendChild(form);
+
+  container.appendChild(div);
+}
+
+// ----------------- CHECKBOX LOGIC -----------------
+document.addEventListener('change', function(e){
+  if(e.target.type==='checkbox'){
+    const mKey = e.target.closest('div').id;
+    const checkboxes = document.querySelectorAll(`#${mKey} .${mKey}-cell`);
+    const checked = Array.from(checkboxes).filter(cb=>cb.checked);
+    checkboxes.forEach(cb=>{cb.disabled=false; cb.classList.remove('disabled');});
+    checked.forEach(cb=>{
+      const type = cb.dataset.type;
+      const name = cb.dataset.name;
+      checkboxes.forEach(other=>{
+        if(other!==cb && other.dataset.type===type && other.dataset.name===name){
+          other.disabled=true; other.classList.add('disabled');
+        }
+      });
+    });
+  }
+});
+
+// ----------------- SUBMISSION -----------------
+function submitMystery(mKey){
+  const m = mysteries[mKey];
+  const suspect = document.getElementById(`${mKey}-suspect`).value;
+  const weapon = document.getElementById(`${mKey}-weapon`).value;
+  const location = document.getElementById(`${mKey}-location`).value;
+  const motive = document.getElementById(`${mKey}-motive`).value;
+
+  if(suspect && weapon && location && motive){
+    if(suspect===m.answer.suspect && weapon===m.answer.weapon && location===m.answer.location && motive===m.answer.motive){
+      const solClue = document.getElementById(`${mKey}-solution-clue`);
+      solClue.style.display = "block";
+      alert("Correct! The solution clue has been revealed.");
+    }else{
+      alert("Submission recorded. Keep investigating!");
+    }
+  }else{
+    alert("Please select all four options before submitting.");
+  }
+}
+</script>
+
+</body>
+</html>

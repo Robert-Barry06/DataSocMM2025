@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pharaoh Cipher Mystery Game</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<style>
+body { font-family: Arial, sans-serif; background-color: #f3e7d4; text-align:center; }
+h1 { margin-top: 20px; }
+#controls { margin: 20px; }
+input { width: 400px; padding: 5px; }
+button { padding: 5px 10px; margin-left: 10px; }
+#message { margin: 20px; font-weight: bold; font-size: 1.2em; white-space: pre-line; }
+#character { margin: 10px; }
+#codeParts { margin: 20px; font-size: 1.2em; }
+</style>
+</head>
+<body>
+
+<h1>Pharaoh's Cipher Mystery Game</h1>
+
+<div id="puzzleInfo">Puzzle 1 of 10</div>
+
+<div id="controls">
+    <label>Enter your Y values (comma-separated, use ? for blocked points): </label>
+    <input type="text" id="userInput" placeholder="e.g., 1,4,?,16,25">
+    <button onclick="submitValues()">Submit</button>
+</div>
+
+<div id="message"></div>
+<div id="character"></div>
+<div id="codeParts">Code so far: </div>
+
+<div id="plot" style="width:90%;height:600px;margin:auto;"></div>
+
+<script>
+// =========================
+// Puzzle definitions
+// =========================
+const puzzles = [
+    // Puzzles 1–2: whole numbers
+    {x:[1,2,3,4,5], secretY:[6,17,34,57,86], blocked:[], func:'2x^2 + 3x +1', name:'Scribe', codePart:'C'},
+    {x:[1,2,3,4,5], secretY:[4,10,18,28,40], blocked:[], func:'x^2 + 5x -2', name:'Priest', codePart:'H'},
+    // Puzzles 3–5: fractions/decimals
+    {x:[1,2,3,4,5], secretY:[6.5,17,34.5,57,86.5], blocked:[], func:'3x^2 + 2.5x +1', name:'Pharaoh', codePart:'E'},
+    {x:[1,2,3,4,5], secretY:[9.5,19,35,57.5,85], blocked:[], func:'2.5x^2 + 4x +3', name:'Vizier', codePart:'N'},
+    {x:[1,2,3,4,5], secretY:[12.5,20,28.5,40,52.5], blocked:[], func:'x^2 + 6.5x +5', name:'Scribe2', codePart:'S'},
+    // Puzzles 6–10: harder, blocked points, fractions
+    {x:[1,2,3,4,5], secretY:[5,16,39,84,165], blocked:[1,3], func:'x^3 +2.5x^2 +1.5x', name:'Guard', codePart:'F'},
+    {x:[1,2,3,4,5], secretY:[11.5,29,62.5,118,207.5], blocked:[0,4], func:'x^3 +3x^2 +5.5x +2', name:'Priest2', codePart:'I'},
+    {x:[0,1,2,3,4], secretY:[2,7,12,17,21], blocked:[2,4], func:'5 ln(x+2) +1.5x', name:'Pharaoh2', codePart:'L'},
+    {x:[0,1,2,3,4], secretY:[2,6.5,18.5,55.5,162.5], blocked:[1,3], func:'2*3^x +0.5x', name:'Vizier2', codePart:'E'},
+    {x:[1,2,3,4,5], secretY:[9.5,28,62.5,122,220.5], blocked:[0,2,4], func:'x^3 +4.5x^2 +3x +1', name:'Final Pharaoh', codePart:'S'}
+];
+
+let currentPuzzle = 0;
+let codeSoFar = '';
+let interferenceInterval;
+
+// =========================
+// Initialize puzzle
+// =========================
+function initPuzzle(index){
+    const puzzle = puzzles[index];
+    document.getElementById('puzzleInfo').innerText = `Puzzle ${index+1} of ${puzzles.length}`;
+    document.getElementById('message').innerText = '';
+    document.getElementById('character').innerHTML = '';
+    document.getElementById('userInput').value = '';
+
+    // Mask blocked points
+    const secretVisible = puzzle.secretY.map((y,i)=>puzzle.blocked.includes(i)? null:y);
+
+    const secretTrace = {
+        x:puzzle.x,
+        y:secretVisible,
+        mode:'markers+lines',
+        name:'Visible Cipher',
+        marker:{color:'lightgray', size:12},
+        line:{color:'lightgray', dash:'dot'}
+    };
+
+    const blockedPoints = {
+        x:puzzle.x.filter((_,i)=>puzzle.blocked.includes(i)),
+        y:puzzle.secretY.filter((_,i)=>puzzle.blocked.includes(i)),
+        mode:'markers',
+        name:'Blocked',
+        marker:{color:'black', size:14, symbol:'square', opacity:0}
+    };
+
+    const userTrace = {
+        x:puzzle.x,
+        y:[],
+        mode:'markers+lines',
+        name:'Your Values',
+        marker:{color:'red', size:12},
+        line:{color:'red'}
+    };
+
+    Plotly.newPlot('plot',[secretTrace,blockedPoints,userTrace], {
+        title:`Puzzle ${index+1}: ${puzzle.func}`,
+        xaxis:{title:'X'},
+        yaxis:{title:'Y'},
+        showlegend:true
+    });
+
+    if(index>=5 && puzzle.blocked.length>0){
+        document.getElementById('message').innerText = "Alert! The murderer has hacked the system and is covering some points!";
+        animateBlocks().then(()=> startInterference(puzzle));
+    } else {
+        Plotly.restyle('plot',{opacity:1},[1]);
+    }
+}
+
+// =========================
+// Animate blocked points
+// =========================
+function animateBlocks(){
+    return new Promise(resolve=>{
+        const frames = 5;
+        let count = 0;
+        const interval = setInterval(()=>{
+            const opacity = (count%2===0)? 0.8:0.2;
+            Plotly.restyle('plot',{opacity:[opacity]},[1]);
+            count++;
+            if(count>frames){
+                clearInterval(interval);
+                Plotly.restyle('plot',{opacity:[1]},[1]);
+                resolve();
+            }
+        },100);
+    });
+}
+
+// =========================
+// Active interference for visible points
+// =========================
+function startInterference(puzzle){
+    const flickerPoints = puzzle.x.map((_,i)=>!puzzle.blocked.includes(i)? i:null).filter(i=>i!==null);
+    let count = 0;
+    document.getElementById('message').innerText = "The murderer is interfering with the visible points!";
+    interferenceInterval = setInterval(()=>{
+        const yFlicker = puzzle.secretY.slice();
+        flickerPoints.forEach(i=>{
+            yFlicker[i] += Math.floor(Math.random()*2)-0; // small random integer glitch
+        });
+        Plotly.restyle('plot',{y:[yFlicker]},[0]);
+        count++;
+        if(count>10){
+            clearInterval(interferenceInterval);
+            Plotly.restyle('plot',{y:[puzzle.secretY.map((y,i)=>puzzle.blocked.includes(i)?null:y)]},[0]);
+            document.getElementById('message').innerText = "Points stabilized. Continue!";
+        }
+    },200);
+}
+
+// =========================
+// Submit user input
+// =========================
+function submitValues(){
+    const input = document.getElementById('userInput').value;
+    const puzzle = puzzles[currentPuzzle];
+    const userY = input.split(',').map(v=>{
+        v=v.trim();
+        if(v==='?'||v==='x') return null;
+        return parseFloat(v);
+    });
+
+    if(userY.length!==puzzle.x.length){
+        alert(`Please enter exactly ${puzzle.x.length} values (use ? for blocked points)`);
+        return;
+    }
+
+    Plotly.restyle('plot',{y:[userY]},[2]);
+
+    let correct = true;
+    for(let i=0;i<puzzle.x.length;i++){
+        if(puzzle.blocked.includes(i)) continue;
+        if(Math.abs(userY[i]-puzzle.secretY[i])>0.001) correct=false;
+    }
+
+    if(correct){
+        codeSoFar+=puzzle.codePart;
+        document.getElementById('codeParts').innerText=`Code so far: ${codeSoFar}`;
+        document.getElementById('character').innerHTML=`<img src="https://via.placeholder.com/100x100.png?text=${puzzle.name}" alt="${puzzle.name}">`;
+
+        document.getElementById('message').innerText =
+            `Well done! You defeated ${puzzle.name} and obtained code part: ${puzzle.codePart}\n\n` +
+            `You can access these files using the following code: DATASOC67\n`
+            `Go and use it before moving on to the next challenge.`;
+
+        currentPuzzle++;
+        clearInterval(interferenceInterval);
+
+        if(currentPuzzle < puzzles.length){
+            setTimeout(()=>{initPuzzle(currentPuzzle);},5000);
+        } else {
+            setTimeout(()=>{
+                document.getElementById('message').innerText=
+                    `Congratulations! All puzzles solved. Final code: ${codeSoFar}\n` +
+                    `You can access the final files using this code.`;
+                document.getElementById('character').innerHTML='';
+                Plotly.purge('plot');
+            },5000);
+        }
+    } else {
+        document.getElementById('message').innerText = "Not correct yet. Adjust your values!";
+    }
+}
+
+// =========================
+// Start game
+// =========================
+initPuzzle(currentPuzzle);
+</script>
+</body>
+</html>

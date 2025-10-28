@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fill-in-the-Array Quiz with Clue</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+    }
+    table {
+        border-collapse: collapse;
+        width: 100%;
+        table-layout: fixed;
+        margin-bottom: 20px;
+    }
+    td, th {
+        border: 1px solid #555;
+        padding: 20px;
+        text-align: center;
+        font-size: 24px;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    input.array-input {
+        width: 90%;
+        height: 50px;
+        font-size: 24px;
+        text-align: center;
+    }
+    input.clue-input {
+        width: 40px;
+        height: 40px;
+        font-size: 24px;
+        text-align: center;
+        margin: 2px;
+    }
+    #unlock-image {
+        display: none;
+        margin-top: 20px;
+        max-width: 100%;
+    }
+    button {
+        padding: 12px 24px;
+        font-size: 18px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+    #hints {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 10px;
+        background: #eef;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-family: monospace;
+        font-size: 16px;
+    }
+    #clue-section {
+        display: none;
+        margin-top: 20px;
+    }
+</style>
+</head>
+<body>
+
+<h1>Fill in the Array Quiz</h1>
+<p>Use the hints below to fill in the table. Correctly filling in the table unlocks your image and reveals a hidden clue.</p>
+
+<div id="hints"></div>
+
+<table id="quiz-table">
+    <thead>
+        <tr>
+            <th></th>
+            <th>1</th><th>2</th><th>3</th><th>4</th><th>5</th>
+            <th>6</th><th>7</th><th>8</th><th>9</th><th>10</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<button onclick="checkAnswers()">Submit Answers</button>
+
+<img id="unlock-image" src="" alt="Unlocked Image">
+
+<!-- Clue Section -->
+<div id="clue-section">
+    <h2>Clue Puzzle</h2>
+    <p>The table corresponds to the image you unlocked. Enter the letters of the clue below:</p>
+
+    <div>
+        <p>Word 1 (8 letters):</p>
+        <div id="word1"></div>
+    </div>
+
+    <div>
+        <p>Word 2 (7 letters):</p>
+        <div id="word2"></div>
+    </div>
+
+    <div>
+        <p>Word 3 (4 letters):</p>
+        <div id="word3"></div>
+    </div>
+
+    <div>
+        <p>Word 4 (3 letters):</p>
+        <div id="word4"></div>
+    </div>
+
+    <button onclick="checkClue()">Submit Clue</button>
+</div>
+
+<script>
+    // --- Correct array (exactly as provided)
+    const answerArray = [
+        [0, 0, 0, 1, 0, 1, 0, 0, 0, 0],
+        [0, 0, 0, 2, 2, 0, 1, 0, 4, 0],
+        [0, 0, 0, 0, 0, 3, 0, 1, 0, 0],
+        [1, 2, 0, 0, 0, 0, 1, 1, 0, 1],
+        [0, 2, 0, 0, 0, 0, 0, 1, 0, 0],
+        [1, 0, 3, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 1, 0, 0, 0, 0, 1, 1],
+        [0, 0, 1, 1, 1, 0, 0, 0, 0, 0],
+        [0, 4, 0, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 1, 0, 0, 1, 0, 0, 0]
+    ];
+
+    // --- Generate accurate hints from array
+    let hints = [];
+    answerArray.forEach((row, i) => {
+        row.forEach((val, j) => {
+            hints.push(`${i+1},${j+1} → ${val}`);
+        });
+    });
+
+    // Shuffle hints randomly
+    for (let i = hints.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [hints[i], hints[j]] = [hints[j], hints[i]];
+    }
+
+    // Display hints in 4-column grid
+    const hintsContainer = document.getElementById('hints');
+    hintsContainer.innerHTML = "";
+    hints.forEach(hint => {
+        const div = document.createElement('div');
+        div.textContent = hint;
+        hintsContainer.appendChild(div);
+    });
+
+    // --- Generate table with 0s
+    const tbody = document.querySelector("#quiz-table tbody");
+    answerArray.forEach((row,i) => {
+        const tr = document.createElement("tr");
+        const rowHeader = document.createElement("th");
+        rowHeader.textContent = i+1;
+        tr.appendChild(rowHeader);
+        row.forEach((_,j) => {
+            const td = document.createElement("td");
+            const input = document.createElement("input");
+            input.type = "number";
+            input.min = 0;
+            input.value = 0;
+            input.dataset.row = i;
+            input.dataset.col = j;
+            input.className = "array-input";
+            td.appendChild(input);
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+
+    // --- Check answers
+    function checkAnswers() {
+        let allCorrect = true;
+        document.querySelectorAll("#quiz-table input").forEach(input => {
+            const row = input.dataset.row;
+            const col = input.dataset.col;
+            const userVal = parseInt(input.value) || 0;
+            if (userVal !== answerArray[row][col]) {
+                allCorrect = false;
+                input.style.backgroundColor = "#f99";
+            } else {
+                input.style.backgroundColor = "#9f9";
+            }
+        });
+
+        if (allCorrect) {
+            const correctImageId = "MM5_Image.png";
+            document.getElementById("unlock-image").src = correctImageId;
+            document.getElementById("unlock-image").style.display = "block";
+            alert(`🎉 Correct! You've unlocked the image: ${correctImageId}`);
+            showCluePlaceholders();
+        } else {
+            alert("Some answers are incorrect. Keep trying!");
+        }
+    }
+
+    // --- Clue setup
+    const clueWords = [8,7,4,3]; // word lengths
+    const correctClue = ["SECURITY","FOOTAGE","DATA","LAB"]; // replace with your own clue letters
+
+    function showCluePlaceholders() {
+        document.getElementById("clue-section").style.display = "block";
+        ["word1","word2","word3","word4"].forEach((id,index) => {
+            const container = document.getElementById(id);
+            container.innerHTML = "";
+            for (let i = 0; i < clueWords[index]; i++) {
+                const input = document.createElement("input");
+                input.type = "text";
+                input.maxLength = 1;
+                input.className = "clue-input";
+                container.appendChild(input);
+            }
+        });
+    }
+
+    function checkClue() {
+        let allCorrect = true;
+        ["word1","word2","word3","word4"].forEach((id,index) => {
+            const container = document.getElementById(id);
+            Array.from(container.querySelectorAll("input")).forEach((input,i) => {
+                if (input.value.toUpperCase() !== correctClue[index][i]) {
+                    allCorrect = false;
+                    input.style.backgroundColor = "#f99";
+                } else {
+                    input.style.backgroundColor = "#9f9";
+                }
+            });
+        });
+        if (allCorrect) {
+            alert("🎉 Congratulations! You solved the clue!");
+        } else {
+            alert("Some letters are incorrect (Try all capitals). Keep trying!");
+        }
+    }
+</script>
+
+</body>
+</html>
