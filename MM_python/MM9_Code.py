@@ -123,7 +123,7 @@ MEDIUM = [
  "question":"What prints?","answer":"[0,1,4,9]","hint":"i**2 squares each number."},
 {"title":"P — Pop and Append","story":"Pop last element, then append new one.","code":'lst=[1,2,3]\nlst.pop()\nlst.append(5)\nprint(lst)',
  "question":"What prints?","answer":"[1,2,5]","hint":"pop removes last, append adds element at end."},
-{"title":"S — Split and Index","story":"Split string and access element.","code':'sentence="help Chen"\nwords=sentence.split()\nprint(words[1])',
+{"title":"S — Split and Index","story":"Split string and access element.","code":'''sentence="help Chen"words=sentence.split()print(words[1])''', #I do not know the purpose of this formatting but this was erroring and this should resolve it for now
  "question":"What prints?","answer":"Chen","hint":"split() separates words; index 1 is second word."},
 {"title":"C — Comma Join","story":"Join letters with commas.","code":'letters=["C","H","E","N"]\nprint(",".join(letters))',
  "question":"What prints?","answer":"C,H,E,N","hint":"join() concatenates with separator."},

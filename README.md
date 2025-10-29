@@ -1,51 +1,12 @@
-**Riddles:**
 
-_Riddle 1: _
+# Tracking issues:
 
-MM1.py
+### Working right now:
 
-_Riddle 2:_
-
-MM2.py
-
-_Riddle 3:_
-
-MM3.py
-
-_Riddle 4:_
-
-MM4.html
-
-_Riddle 5:_
-
-MM5_main.html
-MM5_image.png
-
-_Riddle 6:_
-
-MM6.ipynb
-
-_Riddle 7:_
-
-MM7.html
-
-_Riddle 8:_
-
-MM8-SQLFILE.sql
-master_words2.db
-
-_Riddle 9:_
-
-MM9_code.py
-
-_Riddle 10:_
-
-MM10.html
-
-_Riddle 11:_
-
-MM 11 final (hopefully).html
-
-_Riddle 12:_
-
-MM12.py
+- `MM1.py`, working nice
+- `MM2.py`, working nice
+- `MM3.py`, working nice
+- `MM4.html`, check later
+- `MM5.html`, check later
+- `MM12.py`, this is working nice. Brush this up and then we need to deploy
+- `Note`: Will write in the rest of this when I have time, removed the prev, will better document as I work on this
