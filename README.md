@@ -1,3 +1,4 @@
+
 # Tracking issues:
 
 ### Working right now:
@@ -8,4 +9,4 @@
 - `MM4.html`, check later
 - `MM5.html`, check later
 - `MM12.py`, this is working nice. Brush this up and then we need to deploy
-- 
+- `Note`: Will write in the rest of this when I have time, removed the prev, will better document as I work on this
